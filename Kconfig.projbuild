@@ -1,3 +1,7 @@
 menu "Component drv_stdio Configuration"
 
+    config DRV_STDIO_USE
+        bool "Use drv_stdio component"
+        default y
+        
 endmenu

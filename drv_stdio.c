@@ -23,13 +23,16 @@
 
 #include "driver/uart.h"
 
-#include "app_socket_if.h"
-#include "drv_console_if.h"
+#if CONFIG_APP_SOCKET_STDIO_USE /* consider how to implement splitted */
+#include "app_socket_stdio.h"
+#endif
 
-#if CONFIG_SYSTEM_USE_STREAM_BUFFER
-#include "drv_stream_buffer_if.h"
-#else
-#include "drv_stream_if.h"
+#if CONFIG_DRV_CONSOLE_USE
+#include "drv_console.h"
+#endif
+
+#if CONFIG_DRV_STREAM_USE
+#include "drv_stream.h"
 #endif
 
 
@@ -64,13 +67,8 @@ bool stdio_bUseUart0 = false;
 
 char uart0_tx_buffer[1024];
 
-#if CONFIG_SYSTEM_USE_STREAM_BUFFER
+#if CONFIG_DRV_STREAM_USE
 StreamBufferHandle_t redirect_stdio_stream_buffer_recv = NULL;
-#else
-drv_stream_t redirect_stdio_stream_recv = 
-{
-    "rx_std->", NULL, 0, false, NULL, 0,
-};
 #endif
 
 bool bSkipWriteSocket = false;
@@ -186,10 +184,16 @@ static int std_read(void* cookie, char* pData, int size)
                 nResult = uart_read_bytes(UART_NUM_0, pData, size, 0);
                 if (nResult > 0) 
                 {
+                    #if CONFIG_DRV_CONSOLE_USE
+                    #if CONFIG_DRV_CONSOLE_CUSTOM
+                    #if CONFIG_DRV_CONSOLE_CUSTOM_LOG_DISABLE_FIX
                     if (drv_console_set_log_disabled_check_skipped(pData, nResult))
                     {
 
                     }
+                    #endif
+                    #endif
+                    #endif
                     drv_stdio_redirect_stream_push((uint8_t*)pData, nResult);
                 }
             }
@@ -312,19 +316,19 @@ void drv_stdio_redirect_global(void)
 
 size_t drv_stdio_redirect_stream_push(uint8_t *pData, size_t nSize)
 {
-    #if CONFIG_SYSTEM_USE_STREAM_BUFFER
-    return drv_stream_buffer_push(&redirect_stdio_stream_buffer_recv, (uint8_t*)pData, nSize);
+    #if CONFIG_DRV_STREAM_USE
+    return drv_stream_push(&redirect_stdio_stream_buffer_recv, pData, nSize);
     #else
-    return drv_stream_push(&redirect_stdio_stream_recv, pData, nSize);
+    return 0;
     #endif
 }
 
 size_t drv_stdio_redirect_stream_pull(uint8_t *pData, size_t nSize)
 {
-    #if CONFIG_SYSTEM_USE_STREAM_BUFFER
-    return drv_stream_buffer_pull(&redirect_stdio_stream_buffer_recv, (uint8_t*)pData, nSize);
+    #if CONFIG_DRV_STREAM_USE
+    return drv_stream_pull(&redirect_stdio_stream_buffer_recv, pData, nSize);
     #else
-    return drv_stream_pull(&redirect_stdio_stream_recv, pData, nSize);
+    return 0;
     #endif
 }
 
@@ -333,10 +337,8 @@ void drv_stdio_redirect_uart0(bool bUseUart0)
 {
     stdio_bUseUart0 = bUseUart0;
     
-    #if CONFIG_SYSTEM_USE_STREAM_BUFFER
-    drv_stream_buffer_init(&redirect_stdio_stream_buffer_recv, 0, "redir_stdio_sock_recv");
-    #else
-    drv_stream_init(&redirect_stdio_stream_recv, NULL, 0);
+    #if CONFIG_DRV_STREAM_USE
+    drv_stream_init(&redirect_stdio_stream_buffer_recv, 0, "redir_stdio_sock_recv");
     #endif
 }
 
