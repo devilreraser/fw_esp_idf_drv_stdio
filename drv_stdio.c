@@ -228,17 +228,18 @@ static int std_read(void* cookie, char* pData, int size)
     return nResult;    
 }
 
-void drv_stdio_init_stdin(FILE* p_stdin)
-{
-    p_stdin = fropen(NULL, &std_read);
-    setvbuf(p_stdin, NULL, _IONBF, 0);   
-}
 
-void drv_stdio_init_stdout(FILE* p_stdout)
-{
-    p_stdout = fwopen(NULL, &std_write);
-    setvbuf(p_stdout, NULL, _IONBF, 0);   
-}
+// void drv_stdio_init_stdin(FILE* p_stdin)
+// {
+//     p_stdin = fropen(NULL, &std_read);
+//     setvbuf(p_stdin, NULL, _IONBF, 0);   
+// }
+
+// void drv_stdio_init_stdout(FILE* p_stdout)
+// {
+//     p_stdout = fwopen(NULL, &std_write);
+//     setvbuf(p_stdout, NULL, _IONBF, 0);   
+// }
 
 
 
